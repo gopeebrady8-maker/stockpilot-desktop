@@ -1,0 +1,87 @@
+# Builds the StockPilot installers for Windows (.exe) and macOS (.dmg) on GitHub's computers.
+# Run it from GitHub → Actions → "Build StockPilot desktop" → Run workflow, and type the new version (e.g. 1.0.1).
+# The installers land in a DRAFT release under GitHub → Releases. Publish that release to make the apps update themselves.
+#
+# Signing (add these under GitHub → Settings → Secrets and variables → Actions once you have the certificates;
+# without them the build still works, but Windows shows a SmartScreen warning and macOS blocks the app):
+#   macOS:   CSC_LINK (base64 .p12 Developer ID Application cert), CSC_KEY_PASSWORD,
+#            APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID              (notarization)
+#   Windows: AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET,             (Microsoft Trusted Signing)
+#            AZURE_ENDPOINT, AZURE_CODE_SIGNING_ACCOUNT, AZURE_CERT_PROFILE
+name: Build StockPilot desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number for this release (e.g. 1.0.1). Must be higher than the last one.'
+        required: true
+        default: '1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set version
+        shell: bash
+        run: |
+          V="${{ github.event.inputs.version }}"
+          if ! [[ "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then echo "Version must look like 1.0.1"; exit 1; fi
+          npm version "$V" --no-git-tag-version --allow-same-version
+
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Build and upload (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -z "$CSC_LINK" ]; then
+            echo "::warning::No Apple certificate yet: building an UNSIGNED Mac app (for testing only)."
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+            unset CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
+          fi
+          npx electron-builder --mac --publish always
+
+      - name: Build and upload (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_ENDPOINT: ${{ secrets.AZURE_ENDPOINT }}
+          AZURE_CODE_SIGNING_ACCOUNT: ${{ secrets.AZURE_CODE_SIGNING_ACCOUNT }}
+          AZURE_CERT_PROFILE: ${{ secrets.AZURE_CERT_PROFILE }}
+        run: |
+          if [ -n "$AZURE_CLIENT_SECRET" ]; then
+            npx electron-builder --win --publish always \
+              -c.win.azureSignOptions.publisherName="BT Design" \
+              -c.win.azureSignOptions.endpoint="$AZURE_ENDPOINT" \
+              -c.win.azureSignOptions.codeSigningAccountName="$AZURE_CODE_SIGNING_ACCOUNT" \
+              -c.win.azureSignOptions.certificateProfileName="$AZURE_CERT_PROFILE"
+          else
+            echo "::warning::No Windows signing yet: building an UNSIGNED installer (Windows will show a SmartScreen warning)."
+            npx electron-builder --win --publish always
+          fi
