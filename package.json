@@ -45,8 +45,8 @@
     "dmg": { "title": "StockPilot ${version}", "artifactName": "StockPilot-${version}-mac.dmg" },
     "win": {
       "icon": "build/icon.png",
-      "target": [{ "target": "nsis", "arch": ["x64", "arm64"] }],
-      "publisherName": "BT Design"
+      "target": [{ "target": "nsis", "arch": ["x64", "arm64"] }]
+      
     },
     "nsis": {
       "oneClick": false,
