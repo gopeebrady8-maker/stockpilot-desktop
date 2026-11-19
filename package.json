@@ -28,7 +28,7 @@
     "directories": { "output": "dist", "buildResources": "build" },
     "files": ["src/**/*", "package.json"],
     "artifactName": "StockPilot-${version}-${os}-${arch}.${ext}",
-    "publish": [{ "provider": "github", "owner": "REPLACE-WITH-YOUR-GITHUB-USERNAME", "repo": "stockpilot-desktop", "releaseType": "draft" }],
+    "publish": [{ "provider": "github", "owner": "gopeebrady8-maker", "repo": "stockpilot-desktop", "releaseType": "draft" }],
     "mac": {
       "category": "public.app-category.business",
       "icon": "build/icon.png",
