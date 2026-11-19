@@ -1,0 +1,61 @@
+{
+  "name": "stockpilot-desktop",
+  "productName": "StockPilot",
+  "version": "1.0.0",
+  "description": "StockPilot by BT Design: inventory management for Windows and macOS.",
+  "author": { "name": "BT Design", "email": "info@btdesign.co.za", "url": "https://btdesign.co.za" },
+  "homepage": "https://btdesign.co.za",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist:mac": "electron-builder --mac --publish never",
+    "dist:win": "electron-builder --win --publish never",
+    "release": "electron-builder --publish always"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "za.co.btdesign.stockpilot",
+    "productName": "StockPilot",
+    "copyright": "© BT Design",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["src/**/*", "package.json"],
+    "artifactName": "StockPilot-${version}-${os}-${arch}.${ext}",
+    "publish": [{ "provider": "github", "owner": "REPLACE-WITH-YOUR-GITHUB-USERNAME", "repo": "stockpilot-desktop", "releaseType": "draft" }],
+    "mac": {
+      "category": "public.app-category.business",
+      "icon": "build/icon.png",
+      "target": [{ "target": "dmg", "arch": ["universal"] }, { "target": "zip", "arch": ["universal"] }],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "extendInfo": {
+        "NSCameraUsageDescription": "StockPilot uses the camera to scan product barcodes.",
+        "NSMicrophoneUsageDescription": "StockPilot does not record audio."
+      }
+    },
+    "dmg": { "title": "StockPilot ${version}", "artifactName": "StockPilot-${version}-mac.dmg" },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [{ "target": "nsis", "arch": ["x64", "arm64"] }],
+      "publisherName": "BT Design"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "StockPilot",
+      "artifactName": "StockPilot-Setup-${version}.exe"
+    }
+  }
+}
