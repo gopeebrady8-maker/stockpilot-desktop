@@ -1,5 +1,5 @@
-# Builds the StockPilot installers for Windows (.exe) and macOS (.dmg) on GitHub's computers.
-# Run it from GitHub → Actions → "Build StockPilot desktop" → Run workflow, and type the new version (e.g. 1.0.1).
+# Builds the Holdbay installers for Windows (.exe) and macOS (.dmg) on GitHub's computers.
+# Run it from GitHub → Actions → "Build Holdbay desktop" → Run workflow, and type the new version (e.g. 1.0.1).
 # The installers land in a DRAFT release under GitHub → Releases. Publish that release to make the apps update themselves.
 #
 # Signing (add these under GitHub → Settings → Secrets and variables → Actions once you have the certificates;
@@ -8,7 +8,7 @@
 #            APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID              (notarization)
 #   Windows: AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET,             (Microsoft Trusted Signing)
 #            AZURE_ENDPOINT, AZURE_CODE_SIGNING_ACCOUNT, AZURE_CERT_PROFILE
-name: Build StockPilot desktop
+name: Build Holdbay desktop
 
 on:
   workflow_dispatch:
@@ -22,7 +22,24 @@ permissions:
   contents: write
 
 jobs:
+  # Creates ONE draft release first, so the Mac and Windows builds both upload into it
+  # (otherwise each build makes its own draft and the files end up split).
+  draft:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          V="${{ github.event.inputs.version }}"
+          if gh release view "v$V" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release v$V already exists, reusing it."
+          else
+            gh release create "v$V" -R "$GITHUB_REPOSITORY" --draft --title "$V" --notes "Holdbay $V" --target "$GITHUB_SHA"
+          fi
+
   build:
+    needs: draft
     strategy:
       fail-fast: false
       matrix:
