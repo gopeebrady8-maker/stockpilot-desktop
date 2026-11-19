@@ -1,8 +1,8 @@
 {
-  "name": "holdbay-desktop",
-  "productName": "Holdbay",
-  "version": "1.1.0",
-  "description": "Holdbay by BT Design: inventory management for Windows and macOS.",
+  "name": "stockpilot-desktop",
+  "productName": "StockPilot",
+  "version": "1.0.0",
+  "description": "StockPilot by BT Design: inventory management for Windows and macOS.",
   "author": { "name": "BT Design", "email": "info@btdesign.co.za", "url": "https://btdesign.co.za" },
   "homepage": "https://btdesign.co.za",
   "license": "UNLICENSED",
@@ -22,13 +22,13 @@
     "electron-builder": "^26.0.12"
   },
   "build": {
-    "appId": "za.co.btdesign.holdbay",
-    "productName": "Holdbay",
+    "appId": "za.co.btdesign.stockpilot",
+    "productName": "StockPilot",
     "copyright": "© BT Design",
     "directories": { "output": "dist", "buildResources": "build" },
     "files": ["src/**/*", "package.json"],
-    "artifactName": "Holdbay-${version}-${os}-${arch}.${ext}",
-    "publish": [{ "provider": "github", "owner": "gopeebrady8-maker", "repo": "stockpilot-desktop", "releaseType": "draft" }],
+    "artifactName": "StockPilot-${version}-${os}-${arch}.${ext}",
+    "publish": [{ "provider": "github", "owner": "REPLACE-WITH-YOUR-GITHUB-USERNAME", "repo": "stockpilot-desktop", "releaseType": "draft" }],
     "mac": {
       "category": "public.app-category.business",
       "icon": "build/icon.png",
@@ -38,14 +38,15 @@
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
       "extendInfo": {
-        "NSCameraUsageDescription": "Holdbay uses the camera to scan product barcodes.",
-        "NSMicrophoneUsageDescription": "Holdbay does not record audio."
+        "NSCameraUsageDescription": "StockPilot uses the camera to scan product barcodes.",
+        "NSMicrophoneUsageDescription": "StockPilot does not record audio."
       }
     },
-    "dmg": { "title": "Holdbay ${version}", "artifactName": "Holdbay-${version}-mac.dmg" },
+    "dmg": { "title": "StockPilot ${version}", "artifactName": "StockPilot-${version}-mac.dmg" },
     "win": {
       "icon": "build/icon.png",
-      "target": [{ "target": "nsis", "arch": ["x64", "arm64"] }]
+      "target": [{ "target": "nsis", "arch": ["x64", "arm64"] }],
+      "publisherName": "BT Design"
     },
     "nsis": {
       "oneClick": false,
@@ -53,8 +54,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Holdbay",
-      "artifactName": "Holdbay-Setup-${version}.exe"
+      "shortcutName": "StockPilot",
+      "artifactName": "StockPilot-Setup-${version}.exe"
     }
   }
 }

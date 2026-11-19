@@ -1,7 +1,7 @@
-# Holdbay desktop (Windows & macOS)
+# StockPilot desktop (Windows & macOS)
 
 The desktop app is a proper installed program (Start menu / Dock icon, its own window, menus, printing, camera
-for barcode scanning) that shows the live Holdbay website inside it.
+for barcode scanning) that shows the live StockPilot website inside it.
 
 **Updates**
 - Website changes (new features, fixes) reach desktop users automatically the next time they open the app. Nothing to download.
@@ -18,17 +18,17 @@ for barcode scanning) that shows the live Holdbay website inside it.
    `.github` folder appears, select **everything inside** (`.github`, `build`, `src`, `.gitignore`, `package.json`,
    `README.md`) and drag it onto the GitHub page. Click **Commit changes**.
 4. **Your username** – on GitHub open `package.json`, click the pencil, replace
-   `gopeebrady8-maker` with your GitHub username, **Commit changes**.
+   `REPLACE-WITH-YOUR-GITHUB-USERNAME` with your GitHub username, **Commit changes**.
 
 ## Make the installers (every release)
 
-1. GitHub → your repository → **Actions** (enable workflows if asked) → **Build Holdbay desktop** → **Run workflow**.
+1. GitHub → your repository → **Actions** (enable workflows if asked) → **Build StockPilot desktop** → **Run workflow**.
 2. Type the version (first time `1.0.0`; after that always higher: `1.0.1`, `1.1.0`…) → **Run workflow**. It takes 10–20 minutes.
 3. GitHub → **Releases** → the draft release holds:
-   - `Holdbay-Setup-1.0.0.exe` (Windows, Intel and ARM)
-   - `Holdbay-1.0.0-mac.dmg` (Mac, Apple Silicon and Intel)
+   - `StockPilot-Setup-1.0.0.exe` (Windows, Intel and ARM)
+   - `StockPilot-1.0.0-mac.dmg` (Mac, Apple Silicon and Intel)
 4. Download and test them. Then click **Edit → Publish release**. Publishing is what lets installed apps update.
-5. In Holdbay → **Download Holdbay → Release management**, add each installer with its download link
+5. In StockPilot → **Download StockPilot → Release management**, add each installer with its download link
    (right-click the file in the GitHub release → Copy link), its size and requirements, then **Verify** and **Publish**.
    The download buttons appear on the Download page.
 
@@ -51,7 +51,7 @@ The next build after you add the secrets is signed automatically.
 ## Where things are
 
 - `src/main.js` – the window, menus, link handling, camera permission, updates. The web address is `APP_URL` at the top:
-  change it when Holdbay moves to its own domain, then build a new version.
+  change it when StockPilot moves to its own domain, then build a new version.
 - `src/offline.html` – shown when there's no internet.
 - `build/icon.png` – app icon (1024×1024).
 - `.github/workflows/build-desktop.yml` – the build.

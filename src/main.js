@@ -1,29 +1,14 @@
-// Holdbay desktop (Windows & macOS).
-// The app window shows the live Holdbay web app, so every website update reaches desktop users the next
+// StockPilot desktop (Windows & macOS).
+// The app window shows the live StockPilot web app, so every website update reaches desktop users the next
 // time they open it. The app itself (window, menus, icon) updates automatically from GitHub Releases.
-const { app, BrowserWindow, Menu, shell, session, dialog, ipcMain, nativeTheme, net, systemPreferences } = require('electron');
+const { app, BrowserWindow, Menu, shell, session, dialog, ipcMain, nativeTheme } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
-// www.holdbay.com is the home of Holdbay. Until that domain is connected, the app uses the Netlify address.
-const APP_URLS = ['https://www.holdbay.com/', 'https://stockpilot-btdesign.netlify.app/'];
-let APP_URL = APP_URLS[0];
+const APP_URL = 'https://stockpilot-btdesign.netlify.app/'; // change when StockPilot moves to its own domain
+const APP_ORIGIN = new URL(APP_URL).origin;
 // Sites the window itself may show (sign-in redirects stay in the app; everything else opens in the browser).
-const ALLOWED_ORIGINS = new Set(APP_URLS.map((u) => new URL(u).origin));
-
-// Picks the first address that answers with the Holdbay app (checked once at start-up, 6 seconds max each).
-async function pickAppUrl() {
-  for (const url of APP_URLS) {
-    try {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 6000);
-      const res = await net.fetch(url, { signal: ctrl.signal, cache: 'no-store' });
-      clearTimeout(t);
-      if (res.ok && /Know Your Stock[\s\S]*js\/main\.js/.test(await res.text())) return url; // the real app, not a parked-domain page
-    } catch { /* try the next address */ }
-  }
-  return APP_URLS[0];
-}
+const ALLOWED_ORIGINS = new Set([APP_ORIGIN]);
 const isMac = process.platform === 'darwin';
 
 let win = null;
@@ -58,7 +43,7 @@ function createWindow() {
   const s = loadState();
   win = new BrowserWindow({
     width: s.width, height: s.height, x: s.x, y: s.y, minWidth: 900, minHeight: 600,
-    title: 'Holdbay', show: false, backgroundColor: nativeTheme.shouldUseDarkColors ? '#0f1115' : '#f4f5f7',
+    title: 'StockPilot', show: false, backgroundColor: nativeTheme.shouldUseDarkColors ? '#0f1115' : '#f4f5f7',
     icon: path.join(__dirname, '..', 'build', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -71,7 +56,7 @@ function createWindow() {
 
   // Links that open a new window (target=_blank, mailto, privacy page…) go to the user's browser / mail app.
   win.webContents.setWindowOpenHandler(({ url }) => { openExternal(url); return { action: 'deny' }; });
-  // Never navigate the app window away from Holdbay.
+  // Never navigate the app window away from StockPilot.
   win.webContents.on('will-navigate', (e, url) => { if (!isAllowed(url)) { e.preventDefault(); openExternal(url); } });
   win.webContents.on('will-redirect', (e, url) => { if (!isAllowed(url)) { e.preventDefault(); openExternal(url); } });
 
@@ -87,19 +72,14 @@ function createWindow() {
 // ---------------------------------------------------------------- permissions
 function setupPermissions() {
   const ses = session.defaultSession;
-  // Camera for barcode scanning and notifications, only for Holdbay itself. Everything else is refused.
+  // Camera for barcode scanning and notifications, only for StockPilot itself. Everything else is refused.
   ses.setPermissionRequestHandler((wc, permission, callback, details) => {
     const origin = (() => { try { return new URL(details.requestingUrl || wc.getURL()).origin; } catch { return ''; } })();
-    const ok = ALLOWED_ORIGINS.has(origin) && ['media', 'notifications', 'clipboard-sanitized-write', 'fullscreen'].includes(permission)
+    const ok = origin === APP_ORIGIN && ['media', 'notifications', 'clipboard-sanitized-write', 'fullscreen'].includes(permission)
       && (permission !== 'media' || !(details.mediaTypes || []).includes('audio'));
-    // macOS also asks the user once ("Holdbay would like to access the camera").
-    if (ok && permission === 'media' && isMac && systemPreferences.getMediaAccessStatus('camera') !== 'granted') {
-      systemPreferences.askForMediaAccess('camera').then(callback, () => callback(false));
-      return;
-    }
     callback(ok);
   });
-  ses.setPermissionCheckHandler((_wc, permission, origin) => ALLOWED_ORIGINS.has(origin) && ['media', 'notifications', 'clipboard-sanitized-write'].includes(permission));
+  ses.setPermissionCheckHandler((_wc, permission, origin) => origin === APP_ORIGIN && ['media', 'notifications', 'clipboard-sanitized-write'].includes(permission));
   // Excel / PDF / CSV downloads: always ask where to save, starting in Downloads.
   ses.on('will-download', (_e, item) => {
     item.setSaveDialogOptions({ defaultPath: path.join(app.getPath('downloads'), item.getFilename()) });
@@ -117,8 +97,8 @@ function setupUpdates() {
   updater.on('update-downloaded', (info) => {
     dialog.showMessageBox(win, {
       type: 'info', buttons: ['Restart now', 'Later'], defaultId: 0, cancelId: 1,
-      title: 'Update ready', message: `Holdbay ${info.version} is ready to install.`,
-      detail: 'Restart Holdbay to finish updating. If you choose Later, it installs the next time you close the app.',
+      title: 'Update ready', message: `StockPilot ${info.version} is ready to install.`,
+      detail: 'Restart StockPilot to finish updating. If you choose Later, it installs the next time you close the app.',
     }).then(({ response }) => { if (response === 0) updater.quitAndInstall(); });
   });
   updater.on('error', () => { /* offline or no release yet: try again next launch */ });
@@ -134,9 +114,9 @@ async function checkForUpdatesNow() {
   try {
     const r = await updater.checkForUpdates();
     if (!r || !r.updateInfo || r.updateInfo.version === app.getVersion()) {
-      dialog.showMessageBox(win, { type: 'info', message: `You have the latest version of Holdbay (${app.getVersion()}).` });
+      dialog.showMessageBox(win, { type: 'info', message: `You have the latest version of StockPilot (${app.getVersion()}).` });
     } else {
-      dialog.showMessageBox(win, { type: 'info', message: `Downloading Holdbay ${r.updateInfo.version}…`, detail: 'You’ll be asked to restart when it’s ready.' });
+      dialog.showMessageBox(win, { type: 'info', message: `Downloading StockPilot ${r.updateInfo.version}…`, detail: 'You’ll be asked to restart when it’s ready.' });
     }
   } catch {
     dialog.showMessageBox(win, { type: 'warning', message: 'Couldn’t check for updates. Check your internet connection and try again.' });
@@ -148,9 +128,9 @@ function setupMenu() {
   const help = {
     role: 'help',
     submenu: [
-      { label: 'Holdbay help & support', click: () => openExternal('mailto:info@btdesign.co.za?subject=Holdbay%20support') },
+      { label: 'StockPilot help & support', click: () => openExternal('mailto:info@btdesign.co.za?subject=StockPilot%20support') },
       { label: 'BT Design website', click: () => openExternal('https://btdesign.co.za') },
-      { label: 'Privacy policy', click: () => openExternal(new URL('privacy.html', APP_URL).toString()) },
+      { label: 'Privacy policy', click: () => openExternal(`${APP_ORIGIN}/privacy.html`) },
       { type: 'separator' },
       { label: 'Check for updates…', click: checkForUpdatesNow },
       { label: `Version ${app.getVersion()}`, enabled: false },
@@ -182,11 +162,10 @@ function setupMenu() {
 // ---------------------------------------------------------------- start
 ipcMain.handle('sp:retry', (_e, url) => { if (win) win.loadURL(isAllowed(url) ? url : APP_URL); });
 
-app.setAboutPanelOptions({ applicationName: 'Holdbay', applicationVersion: app.getVersion(), copyright: 'Holdbay by BT Design', website: 'https://btdesign.co.za' });
-app.whenReady().then(async () => {
+app.setAboutPanelOptions({ applicationName: 'StockPilot', applicationVersion: app.getVersion(), copyright: 'StockPilot by BT Design', website: 'https://btdesign.co.za' });
+app.whenReady().then(() => {
   setupPermissions();
   setupMenu();
-  APP_URL = await pickAppUrl();
   createWindow();
   setupUpdates();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });

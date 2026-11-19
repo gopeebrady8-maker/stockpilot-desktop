@@ -1,4 +1,4 @@
-// Runs before the Holdbay page loads. Exposes only a tiny, read-only API: nothing from Node.js reaches the page.
+// Runs before the StockPilot page loads. Exposes only a tiny, read-only API: nothing from Node.js reaches the page.
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('stockpilotDesktop', {
